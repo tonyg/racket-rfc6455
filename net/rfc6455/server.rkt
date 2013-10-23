@@ -40,22 +40,26 @@
       (d conn req))))
 
 (define ws-serve
-  (make-keyword-procedure
-   (lambda (keys vals conn-dispatch . rest)
-     (define kvs (map list keys vals))
-     (define conn-headers-cell (assq '#:conn-headers kvs))
-     (define conn-headers (and conn-headers-cell (cadr conn-headers-cell)))
-     (define dispatcher (make-rfc6455-dispatcher conn-dispatch #:conn-headers conn-headers))
-     (match-define (list keys1 vals1) (transpose (remq conn-headers-cell kvs)))
-     (keyword-apply serve
-		    (cons '#:dispatch keys1)
-		    (cons (guard-dispatcher dispatcher) vals1)
-		    rest))))
+  (procedure-rename
+   (make-keyword-procedure
+    (lambda (keys vals conn-dispatch . rest)
+      (define kvs (map list keys vals))
+      (define conn-headers-cell (assq '#:conn-headers kvs))
+      (define conn-headers (and conn-headers-cell (cadr conn-headers-cell)))
+      (define dispatcher (make-rfc6455-dispatcher conn-dispatch #:conn-headers conn-headers))
+      (match-define (list keys1 vals1) (transpose (remq conn-headers-cell kvs)))
+      (keyword-apply serve
+		     (cons '#:dispatch keys1)
+		     (cons (guard-dispatcher dispatcher) vals1)
+		     rest)))
+   'ws-serve))
 
 (define ws-serve*
-  (make-keyword-procedure
-   (lambda (keys vals service-mapper . rest)
-     (keyword-apply serve
-		    (cons '#:dispatch keys)
-		    (cons (guard-dispatcher (make-service-mapper-dispatcher service-mapper)) vals)
-		    rest))))
+  (procedure-rename
+   (make-keyword-procedure
+    (lambda (keys vals service-mapper . rest)
+      (keyword-apply serve
+		     (cons '#:dispatch keys)
+		     (cons (guard-dispatcher (make-service-mapper-dispatcher service-mapper)) vals)
+		     rest)))
+   'ws-serve*))

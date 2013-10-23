@@ -1,5 +1,5 @@
 #lang racket/base
-;; Main exports of the collection.
+;; Main exports.
 
 ;; Copyright (c) 2013 Tony Garnock-Jones
 ;;
@@ -12,8 +12,8 @@
 ;; modified software. See http://www.gnu.org/licenses/lgpl-3.0.txt for
 ;; more information.
 
-(require "service-mapper.rkt")
-(require "server.rkt")
+(require "rfc6455/service-mapper.rkt")
+(require "rfc6455/server.rkt")
 
 (provide ws-service-mapper
-	 (all-from-out "server.rkt"))
+	 (all-from-out "rfc6455/server.rkt"))

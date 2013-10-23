@@ -1,10 +1,11 @@
 #lang racket/base
-;; Demonstrates the ws-serve interface.
+;; Demonstrates the ws-serve* and ws-service-mapper server utilities.
 ;; Public Domain.
 
-(require "../main.rkt")
+(require racket/match)
+(require "../../rfc6455.rkt")
 
-(define (connection-handler c state)
+(define (connection-handler c)
   (let loop ()
     (sync (handle-evt (alarm-evt (+ (current-inexact-milliseconds) 1000))
 		      (lambda _
@@ -21,7 +22,11 @@
   (ws-close! c))
 
 (define stop-service
-  (ws-serve #:port 8081 connection-handler))
+  (ws-serve* #:port 8081
+	     (ws-service-mapper
+	      ["/test"
+	       [(subprotocol) (lambda (c) (ws-send! c "This is the subprotocol handler"))]
+	       [(#f) connection-handler]])))
 
 (printf "Server running. Hit enter to stop service.\n")
 (void (read-line))
