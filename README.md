@@ -1,4 +1,4 @@
-# RFC 6455 WebSockets support for Racket
+# RFC 6455 WebSockets for Racket
 
 This package provides an
 [RFC 6455](http://tools.ietf.org/html/rfc6455) compatible WebSockets
