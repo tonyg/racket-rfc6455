@@ -21,6 +21,31 @@ combine this package's implementation with a fallback to the older
 protocol variant implemented by `net/websocket/server`, but I have not
 explored this.
 
+## Examples
+
+See the `net/rfc6455/examples` directory.
+
+ - `test-server.rkt` is a server using the API compatible with
+   Racket's existing WebSockets support.
+
+ - `test-service-mapper.rkt` is (roughly) the same service,
+   implemented using the extended API provided by this package.
+
+ - `client.html` and `client.js` form a simple browser-based
+   WebSockets program that exercises the servers.
+
+To run the examples,
+
+    $ racket -l net/rfc6455/examples/test-server
+
+or
+
+    $ racket -l net/rfc6455/examples/test-service-mapper
+
+and then open `client.html` in your favourite browser. It should work
+served directly off the file system. Make sure to open your browser's
+web console to see the effect of the WebSockets communication.
+
 ## Usage Synopsis
 
 Using the `net/websocket`-compatible interface:
