@@ -21,11 +21,11 @@
 (require web-server/dispatchers/dispatch)
 (require "dispatcher.rkt")
 (require "service-mapper.rkt")
-(require "conn.rkt")
+(require "conn-api.rkt")
 
 (provide ws-serve
 	 ws-serve*
-	 (except-out (all-from-out "conn.rkt") ws-conn set-ws-conn-closed?!))
+	 (except-out (all-from-out "conn-api.rkt") (struct-out ws-conn-base)))
 
 (define (transpose xss) (apply map list xss))
 
@@ -46,7 +46,7 @@
       (define kvs (map list keys vals))
       (define conn-headers-cell (assq '#:conn-headers kvs))
       (define conn-headers (and conn-headers-cell (cadr conn-headers-cell)))
-      (define dispatcher (make-rfc6455-dispatcher conn-dispatch #:conn-headers conn-headers))
+      (define dispatcher (make-general-websockets-dispatcher conn-dispatch conn-headers))
       (match-define (list keys1 vals1) (transpose (remq conn-headers-cell kvs)))
       (keyword-apply serve
 		     (cons '#:dispatch keys1)

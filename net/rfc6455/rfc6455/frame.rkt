@@ -14,15 +14,15 @@
 
 (require racket/match)
 
-(provide (struct-out ws-frame)
-	 ws-frame-final?
+(provide (struct-out rfc6455-frame)
+	 rfc6455-frame-final?
 	 mask-written-frames?
 	 read-frame
 	 write-frame)
 
 (define mask-written-frames? (make-parameter #f))
 
-(struct ws-frame (final? opcode payload) #:transparent)
+(struct rfc6455-frame (final? opcode payload) #:transparent)
 
 (define (read-int width-in-bytes p)
   (define bs (read-bytes width-in-bytes p))
@@ -58,12 +58,12 @@
   (if (or (eof-object? flags+opcode)
 	  (eof-object? payload))
       eof
-      (ws-frame (bitwise-bit-set? flags+opcode 7)
-		(bitwise-and flags+opcode 15)
-		payload)))
+      (rfc6455-frame (bitwise-bit-set? flags+opcode 7)
+		     (bitwise-and flags+opcode 15)
+		     payload)))
 
 (define (write-frame f p)
-  (match-define (ws-frame final? opcode payload) f)
+  (match-define (rfc6455-frame final? opcode payload) f)
   (write-byte (bitwise-ior (if final? #x80 #x00) (bitwise-and opcode 15)) p)
   (define key (and (mask-written-frames?)
 		   (bytes (random 256) ;; TODO: cryptographic PRNG?

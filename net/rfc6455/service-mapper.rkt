@@ -15,12 +15,11 @@
 ;; more information.
 
 (require racket/match)
-(require racket/string)
-(require net/url)
 (require web-server/http/request-structs)
 (require web-server/dispatchers/dispatch)
 
 (require "dispatcher.rkt")
+(require "http.rkt")
 
 (provide ws-service-mapper
 	 make-service-mapper-dispatcher)
@@ -29,9 +28,9 @@
   (syntax-rules ()
     [(_ [uri-regexp [(protocol ...) function] ...] ...)
      (lambda (uri)
-       (define path (string-join (cons "" (map path/param-path (url-path uri))) "/"))
+       (define resource (url->resource-string uri))
        (cond
-	[(regexp-match-exact? uri-regexp path)
+	[(regexp-match-exact? uri-regexp resource)
 	 (lambda (requested-protocol)
 	   (or (case requested-protocol [(protocol ...) function] [else #f])
 	       ...))]
@@ -63,5 +62,6 @@
 	    function)))
 
 (define (make-service-mapper-dispatcher service-mapper)
-  (make-rfc6455-dispatcher (lambda (c selected-service-handler) (selected-service-handler c))
-			   #:conn-headers (lookup-service service-mapper)))
+  (make-general-websockets-dispatcher
+   (lambda (c selected-service-handler) (selected-service-handler c))
+   (lookup-service service-mapper)))
