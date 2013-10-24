@@ -17,27 +17,27 @@
 This package, @tt{rfc6455}, provides an
 @link["http://tools.ietf.org/html/rfc6455"]{RFC 6455} compatible
 WebSockets @emph{server} interface for Racket, building on Racket's
-@racket[web-server] collection. Racket's built-in
-@racket[net/websocket] collection implements an old draft of the
-WebSockets protocol that is no longer supported by modern browsers,
-whereas RFC 6455 is the standard. Wikipedia has a
+@racket[web-server] collection.
+
+Besides support for RFC 6455, the final WebSockets standard, the
+package also incorporates code supporting the earlier, draft
+@link["http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-00"]{hybi-00}
+proposal, because several common older browsers still use this
+protocol variant.
+
+Wikipedia has a
 @link["http://en.wikipedia.org/wiki/WebSocket#Browser_support"]{good
 section on browser support for WebSocket protocol variations}, which
 states "All the latest browsers except Android browser support the
 latest specification (RFC 6455) of the WebSocket protocol."
 
-In particular, this package has been tested against
+This package has been developed against
 
 @itemize[
-  @item{Firefox 24.0}
-  @item{Chrome 30.0.1599.101}
+  @item{Firefox 24.0 (which is an RFC 6455 peer)}
+  @item{Chrome 30.0.1599.101 (which is an RFC 6455 peer)}
+  @item{Safari 5.1.10 (which is a hybi-00 peer)}
 ]
-
-It does not work in Safari 5.x; only Safari 6.0 and newer have support
-for RFC 6455 WebSockets. In principle, it ought to be possible to
-combine this package's implementation with a fallback to the older
-protocol variant implemented by @racketmodname[net/websocket/server],
-but I have not explored this.
 
 @section{Synopsis}
 
@@ -62,20 +62,16 @@ subprotocol selection:
 
 @section{License}
 
-The following text applies to all the code in this package except
-files marked "public domain" in the @tt{net/rfc6455/examples} directory:
+All the code in this package is licensed under the LGPL, version 3.0
+or any later version. Each source file has a brief copyright and
+licensing notice attached, but see
+@link["http://www.gnu.org/licenses/lgpl-3.0.txt"]{the licence text
+itself} for full details.
 
-Copyright (c) 2013 Tony Garnock-Jones.
-
-This package is distributed under the GNU Lesser General Public
-License (LGPL). This means that you can link it into proprietary
-applications, provided you follow the rules stated in the LGPL. You
-can also modify this package; if you distribute a modified version,
-you must distribute it under the terms of the LGPL, which in
-particular means that you must release the source code for the
-modified software. See
-@link["http://www.gnu.org/licenses/lgpl-3.0.txt"]{http://www.gnu.org/licenses/lgpl-3.0.txt}
-for more information.
+The only exceptions to the above are the files marked "public domain"
+in the @tt{net/rfc6455/examples} directory. They are intended to be
+examples of usage of the package for people to build on without
+concern for licensing minutiae.
 
 @section{API}
 
@@ -88,8 +84,33 @@ differences.
 @defproc[(ws-conn? [x any/c]) boolean?]{
 
 Returns @racket[#t] if and only if @racket[x] is a WebSocket
-connection structure. Note that the structure defined by this package
-is different from @racket[builtin:ws-conn?].
+connection as defined by this package. Note that this is quite
+different from @racket[builtin:ws-conn?].
+
+}
+
+@defproc[(ws-conn-supports-fragmentation? [c ws-conn?]) boolean?]{
+
+@racket[#t] iff the connected peer supports sending and receiving
+fragmented/streamed messages. Currently, RFC 6455-compliant peers
+support fragmentation, while hybi-00 peers do not.
+
+}
+
+@defproc[(ws-conn-supports-payload-type? [c ws-conn?] [payload-type symbol?]) boolean?]{
+
+@racket[#t] iff the connected peer supports the requested payload
+type. RFC 6455-compliant peers support types @racket['text] and
+@racket['binary], while hybi-00 peers support only @racket['text].
+
+}
+
+@defproc[(ws-conn-signals-status-on-close? [c ws-conn?]) boolean?]{
+
+@racket[#t] iff the @racket[status] and/or @racket[reason] values are
+communicated to the remote peer on connection
+close (@racket[ws-close!]). RFC 6455 includes space in the wire
+protocol for these values, while hybi-00 does not.
 
 }
 
@@ -161,11 +182,16 @@ procedures, each taking a @racket[ws-conn?] as their only argument.
 
 Sends a message to the remote peer.
 
+(Note: Only RFC 6455 peers support fragmentation and non-text
+payloads. Attempts to use these features with hybi-00 peers will
+signal an error. See @racket[ws-conn-supports-fragmentation?] and
+@racket[ws-conn-supports-payload-type?].)
+
 If @racket[payload] is a string, it is converted to bytes using
 @racket[string->bytes/utf-8] before transmission. If it is an
 input-port, it is read from and streamed using multiple WebSockets
 message fragments to the peer until it yields @racket[eof] (see also
-@racket[ws-stream-buffer-size]).
+@racket[rfc6455-stream-buffer-size]).
 
 If @racket[flush?] is false, the buffers of the underlying connection
 socket output-ports are not flushed after sending the message.
@@ -207,6 +233,11 @@ multi-fragment message:
 
 Receives a message from the remote peer.
 
+(Note: Only RFC 6455 peers support streaming and non-text payloads.
+Attempts to use these features with hybi-00 peers will signal an
+error. See @racket[ws-conn-supports-fragmentation?] and
+@racket[ws-conn-supports-payload-type?].)
+
 If @racket[stream?] is true, returns an input port from which the
 bytes or characters making up the message can be read. An end-of-file
 from the resulting input port is ambiguous: it does not separate the
@@ -236,12 +267,25 @@ Closes a connection. Has no effect if the connection is already
 closed. The status code and reason are supplied to the remote peer in
 the close frame.
 
+(Note: hybi-00 peers do not have room in their wire protocol for the
+status and reason codes. See
+@racket[ws-conn-signals-status-on-close?].)
+
 }
 
-@defparam[ws-stream-buffer-size size integer?]{
+@defparam[rfc6455-stream-buffer-size size integer?]{
 
 Used when streaming the contents of an input-port given to
 @racket[ws-send!]. Streamed message fragments will be no larger than
-@racket[(ws-stream-buffer-size)] bytes each.
+@racket[(rfc6455-stream-buffer-size)] bytes each.
+
+}
+
+@defparam[hybi00-framing-mode mode (or/c 'new 'old)]{
+
+Used with @emph{pre-}hybi-00 peers. Selects either the "new" or "old"
+framing modes. You only have to worry about this if you're trying to
+communicate with truly ancient, pre-hybi-00 peers, and then you no
+doubt have bigger problems.
 
 }
