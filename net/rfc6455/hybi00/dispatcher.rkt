@@ -62,10 +62,6 @@
     (define (get-header k) (let ((h (headers-assq* k headers))) (and h (header-value h))))
     (define origin (get-header #"Origin"))
 
-    (begin (local-require racket/pretty net/url)
-	   (pretty-print req)
-	   (pretty-print (url->string (request-uri req))))
-
     (fprintf op "HTTP/1.1 101 WebSocket Protocol Handshake\r\n")
     (print-headers 
      op
