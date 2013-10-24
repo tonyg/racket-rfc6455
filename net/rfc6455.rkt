@@ -14,6 +14,10 @@
 
 (require "rfc6455/service-mapper.rkt")
 (require "rfc6455/server.rkt")
+(require (only-in "rfc6455/rfc6455/conn.rkt" rfc6455-stream-buffer-size))
+(require (only-in "rfc6455/hybi00/conn.rkt" hybi00-framing-mode))
 
 (provide ws-service-mapper
-	 (all-from-out "rfc6455/server.rkt"))
+	 (all-from-out "rfc6455/server.rkt")
+	 rfc6455-stream-buffer-size
+	 hybi00-framing-mode)
