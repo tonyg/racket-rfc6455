@@ -1,25 +1,26 @@
 # RFC 6455 WebSockets for Racket
 
-This package provides an
+This package, `rfc6455`, provides an
 [RFC 6455](http://tools.ietf.org/html/rfc6455) compatible WebSockets
 *server* interface for Racket, building on Racket's `web-server`
-collection. Racket's built-in `net/websocket` collection implements an
-old draft of the WebSockets protocol that is no longer supported by
-modern browsers, whereas RFC 6455 is the standard. Wikipedia has a
+collection.
+
+Besides support for RFC 6455, the final WebSockets standard, the
+package also incorporates code supporting the earlier, draft
+[hybi-00](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-00)
+proposal, because several common older browsers still use this
+protocol variant.
+
+Wikipedia has a
 [good section on browser support for WebSocket protocol variations](http://en.wikipedia.org/wiki/WebSocket#Browser_support),
 which states "All the latest browsers except Android browser support
 the latest specification (RFC 6455) of the WebSocket protocol."
 
-In particular, this package has been tested against
+This package has been developed against
 
- - Firefox 24.0
- - Chrome 30.0.1599.101
-
-It does not work in Safari 5.x; only Safari 6.0 and newer have support
-for RFC 6455 WebSockets. In principle, it ought to be possible to
-combine this package's implementation with a fallback to the older
-protocol variant implemented by `net/websocket/server`, but I have not
-explored this.
+ - Firefox 24.0 (which is an RFC 6455 peer)
+ - Chrome 30.0.1599.101 (which is an RFC 6455 peer)
+ - Safari 5.1.10 (which is a hybi-00 peer)
 
 ## Examples
 
