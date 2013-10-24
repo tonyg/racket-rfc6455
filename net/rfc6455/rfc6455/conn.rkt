@@ -128,7 +128,11 @@
 (struct rfc6455-conn ws-conn-base ()
 	#:transparent
 	#:methods gen:ws-conn
-	[(define (ws-conn-closed? c) (ws-conn-base-closed? c))
+	[(define (ws-conn-supports-fragmentation? c) #t)
+	 (define (ws-conn-supports-payload-type? c payload-type)
+	   (memq payload-type '(text binary)))
+	 (define (ws-conn-signals-status-on-close? c) #t)
+	 (define (ws-conn-closed? c) (ws-conn-base-closed? c))
 	 (define (ws-conn-line c) (ws-conn-base-line c))
 	 (define (ws-conn-headers c) (ws-conn-base-headers c))
 	 (define (ws-send! c payload

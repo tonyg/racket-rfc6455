@@ -7,6 +7,9 @@
 
 	 gen:ws-conn
 	 ws-conn?
+	 ws-conn-supports-fragmentation?
+	 ws-conn-supports-payload-type?
+	 ws-conn-signals-status-on-close?
 	 ws-conn-closed?
 	 ws-conn-line
 	 ws-conn-headers
@@ -23,6 +26,9 @@
        (not (ws-conn-closed? x))))
 
 (define-generics ws-conn
+  (ws-conn-supports-fragmentation? ws-conn)
+  (ws-conn-supports-payload-type? ws-conn payload-type)
+  (ws-conn-signals-status-on-close? ws-conn)
   (ws-conn-closed? ws-conn)
   (ws-conn-line ws-conn)
   (ws-conn-headers ws-conn)

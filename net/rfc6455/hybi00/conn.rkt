@@ -96,7 +96,10 @@
 (struct hybi00-conn ws-conn-base ()
 	#:transparent
 	#:methods gen:ws-conn
-	[(define (ws-conn-closed? c) (ws-conn-base-closed? c))
+	[(define (ws-conn-supports-fragmentation? c) #f)
+	 (define (ws-conn-supports-payload-type? c payload-type) (eq? payload-type 'text))
+	 (define (ws-conn-signals-status-on-close? c) #f)
+	 (define (ws-conn-closed? c) (ws-conn-base-closed? c))
 	 (define (ws-conn-line c) (ws-conn-base-line c))
 	 (define (ws-conn-headers c) (ws-conn-base-headers c))
 	 (define (ws-send! c payload
