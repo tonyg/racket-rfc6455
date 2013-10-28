@@ -242,14 +242,15 @@ If @racket[stream?] is true, returns an input port from which the
 bytes or characters making up the message can be read. An end-of-file
 from the resulting input port is ambiguous: it does not separate the
 end of the message being read from the end of the connection itself.
-Use @racket[ws-conn?] to disambiguate.
+Use @racket[ws-conn-closed?] to disambiguate.
 
 If @racket[stream?] is @racket[#f], returns either a string or a
 bytes, depending on @racket[payload-type]. If a specific
 @racket['text] or @racket['binary] payload type is requested, the
 corresponding result type is returned, or if @racket['auto] (the
 default) is requested, the message's own text/binary indicator bit is
-used to decide which to return.
+used to decide which to return. If @racket[eof] occurs mid-message,
+fragments so far received are discarded and @racket[eof] is returned.
 
 Multi-fragment messages are transparently reassembled: in the case of
 a returned input-port, fragment boundaries are not preserved, and in

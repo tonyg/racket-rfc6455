@@ -103,9 +103,9 @@
 							 "Unsupported payload type: ~v"
 							 payload-type)])))
 	(if (ws-conn-base-closed? c)
-	    (finish-non-stream-recv rev-acc converter)
+	    eof
 	    (match (next-data-frame c)
-	      [(? eof-object?) (finish-non-stream-recv rev-acc converter)]
+	      [(? eof-object?) eof]
 	      [(rfc6455-frame final? opcode payload)
 	       ((if final? finish-non-stream-recv loop)
 		(cons payload rev-acc)
