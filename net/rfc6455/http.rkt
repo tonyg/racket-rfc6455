@@ -12,10 +12,11 @@
 	 url->resource-string
 	 construct-ws-location)
 
-(define (tokenize-header-value v)
-  (and v
-       (map (lambda (p) (string-downcase (string-trim p)))
-	    (string-split (bytes->string/latin-1 v) ","))))
+(define (tokenize-header-value v [value-if-absent '()])
+  (if v
+      (map (lambda (p) (string-downcase (string-trim p)))
+	    (string-split (bytes->string/latin-1 v) ","))
+      value-if-absent))
 
 (define (reconstruct-request-line req) ;; hmm.
   (bytes-append (request-method req)
