@@ -59,6 +59,7 @@
   (match (read-frame (ws-conn-base-ip c))
     [(? eof-object? f) f]
     [(and f (rfc6455-frame final? opcode payload))
+     ((ws-conn-base-bump-timeout! c))
      (case opcode
        [(0 1 2) ;; continuation, text, binary
 	f]

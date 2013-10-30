@@ -290,3 +290,13 @@ communicate with truly ancient, pre-hybi-00 peers, and then you no
 doubt have bigger problems.
 
 }
+
+@defparam[ws-idle-timeout seconds number?]{
+
+Idle timeout in seconds. If the interval between successive received
+frames (of any type) exceeds this number of seconds, the connection
+will be closed.
+
+This parameter defaults to 300 seconds, i.e. five minutes.
+
+}

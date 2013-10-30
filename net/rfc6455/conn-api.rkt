@@ -17,7 +17,7 @@
 	 ws-recv
 	 ws-close!)
 
-(struct ws-conn-base ([closed? #:mutable] line headers ip op)
+(struct ws-conn-base ([closed? #:mutable] line headers ip op bump-timeout!)
 	#:property prop:evt (struct-field-index ip)
 	#:transparent)
 

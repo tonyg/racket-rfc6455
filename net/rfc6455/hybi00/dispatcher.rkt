@@ -31,6 +31,7 @@
          "conn.rkt"
          "handshake.rkt")
 (require "../http.rkt")
+(require "../timeout.rkt")
 
 (provide make-hybi00-dispatcher)
 
@@ -80,9 +81,11 @@
      op)
     (flush-output op)
     
+    (bump-connection-timeout! c)
     (conn-dispatch (hybi00-conn #f
 				cline
 				headers
 				ip
-				op)
+				op
+				(lambda () (bump-connection-timeout! c)))
 		   state)))

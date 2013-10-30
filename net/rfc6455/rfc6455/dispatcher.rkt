@@ -20,6 +20,7 @@
 (require web-server/http/request-structs)
 (require "conn.rkt")
 (require "../http.rkt")
+(require "../timeout.rkt")
 
 (provide make-rfc6455-dispatcher)
 
@@ -64,9 +65,11 @@
     (fprintf op "\r\n")
     (flush-output op)
 
+    (bump-connection-timeout! conn)
     (conn-dispatch (rfc6455-conn #f
 				 request-line
 				 headers
 				 (connection-i-port conn)
-				 op)
+				 op
+				 (lambda () (bump-connection-timeout! conn)))
 		   connection-state)))
