@@ -19,6 +19,7 @@
 (require web-server/http/response)
 (require web-server/http/response-structs)
 (require web-server/dispatchers/dispatch)
+(require net/url)
 (require "dispatcher.rkt")
 (require "service-mapper.rkt")
 (require "conn-api.rkt")
@@ -33,6 +34,9 @@
   (lambda (conn req)
     (with-handlers [(exn:dispatcher?
 		     (lambda (e)
+		       (log-info "Bad WS request, ~a ~a"
+				 (request-method req)
+				 (url->string (request-uri req)))
 		       (output-response/method
 			conn
 			(response 400 #"Bad WebSocket request" (current-seconds) #f '() void)
