@@ -21,15 +21,15 @@
 
 (define rfc6455-stream-buffer-size (make-parameter 65536))
 
-(define (stream-frames ip initial-opcode final-fragment? op)
+(define (stream-frames ip initial-opcode final-fragment? op mask?)
   (define buffer (make-bytes (rfc6455-stream-buffer-size)))
   (let loop ((opcode initial-opcode))
     (match (read-bytes-avail! buffer ip)
       [(? eof-object?)
        (when final-fragment?
-	 (write-frame (rfc6455-frame #t 0 #"") op))]
+	 (write-frame (rfc6455-frame #t 0 #"") op mask?))]
       [fragment-length
-       (write-frame (rfc6455-frame #f opcode (subbytes buffer 0 fragment-length)) op)
+       (write-frame (rfc6455-frame #f opcode (subbytes buffer 0 fragment-length)) op mask?)
        (loop 0) ;; continuation
        ])))
 
@@ -45,13 +45,14 @@
 	['binary 2]
 	[_ (error 'rfc6455-send! "Unsupported payload type: ~v" payload-type)]))
     (if (input-port? payload)
-	(stream-frames payload opcode final-fragment? (ws-conn-base-op c))
+	(stream-frames payload opcode final-fragment? (ws-conn-base-op c) (rfc6455-conn-mask? c))
 	(let ((payload-bytes (cond
 			      [(bytes? payload) payload]
 			      [(string? payload) (string->bytes/utf-8 payload)]
 			      [else (error 'rfc6455-send! "Unsupported payload: ~v" payload)])))
 	  (write-frame (rfc6455-frame final-fragment? opcode payload-bytes)
-		       (ws-conn-base-op c))))
+		       (ws-conn-base-op c)
+		       (rfc6455-conn-mask? c))))
     (when flush?
       (flush-output (ws-conn-base-op c)))))
 
@@ -65,11 +66,11 @@
 	f]
        [(8) ;; close; shutdown
 	(unless (ws-conn-base-closed? c)
-	  (write-frame (rfc6455-frame #t 8 #"") (ws-conn-base-op c))
+	  (write-frame (rfc6455-frame #t 8 #"") (ws-conn-base-op c) (rfc6455-conn-mask? c))
 	  (set-ws-conn-base-closed?! c #t))
 	eof]
        [(9) ;; ping; reply
-	(write-frame (rfc6455-frame #t 10 payload) (ws-conn-base-op c))
+	(write-frame (rfc6455-frame #t 10 payload) (ws-conn-base-op c) (rfc6455-conn-mask? c))
 	(next-data-frame c)]
        [(10) ;; unsolicited pong; ignore
 	(next-data-frame c)]
@@ -119,14 +120,15 @@
   (unless (ws-conn-base-closed? c)
     (write-frame (rfc6455-frame #t 8 (bytes-append (integer->integer-bytes status 2 #f #t)
 					      (string->bytes/utf-8 reason)))
-		 (ws-conn-base-op c))
+		 (ws-conn-base-op c)
+		 (rfc6455-conn-mask? c))
     (set-ws-conn-base-closed?! c #t)
     (flush-output (ws-conn-base-op c))
     (let loop ()
       (unless (eof-object? (next-data-frame c))
 	(loop)))))
 
-(struct rfc6455-conn ws-conn-base ()
+(struct rfc6455-conn ws-conn-base (mask?)
 	#:transparent
 	#:methods gen:ws-conn
 	[(define (ws-conn-supports-fragmentation? c) #t)

@@ -16,11 +16,8 @@
 
 (provide (struct-out rfc6455-frame)
 	 rfc6455-frame-final?
-	 mask-written-frames?
 	 read-frame
 	 write-frame)
-
-(define mask-written-frames? (make-parameter #f))
 
 (struct rfc6455-frame (final? opcode payload) #:transparent)
 
@@ -62,16 +59,16 @@
 		     (bitwise-and flags+opcode 15)
 		     payload)))
 
-(define (write-frame f p)
+(define (write-frame f p mask?)
   (match-define (rfc6455-frame final? opcode payload) f)
   (write-byte (bitwise-ior (if final? #x80 #x00) (bitwise-and opcode 15)) p)
-  (define key (and (mask-written-frames?)
+  (define key (and mask?
 		   (bytes (random 256) ;; TODO: cryptographic PRNG?
 			  (random 256)
 			  (random 256)
 			  (random 256))))
   (define payload-length (bytes-length payload))
-  (define (compute-length-byte v) (bitwise-ior (if (mask-written-frames?) #x80 #x00) v))
+  (define (compute-length-byte v) (bitwise-ior (if mask? #x80 #x00) v))
   (cond
    [(< payload-length 126)
     (write-byte (compute-length-byte payload-length) p)]

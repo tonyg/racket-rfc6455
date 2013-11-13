@@ -65,4 +65,5 @@
 		response-headers
 		ip
 		op
-		(lambda () (bump-connection-timeout! conn))))
+		(lambda () (bump-connection-timeout! conn))
+		#t))
