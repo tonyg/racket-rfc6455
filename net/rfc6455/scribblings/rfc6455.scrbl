@@ -14,9 +14,9 @@
 
 @section{Introduction}
 
-This package, @tt{rfc6455}, provides an
+This package, @tt{rfc6455}, provides
 @link["http://tools.ietf.org/html/rfc6455"]{RFC 6455} compatible
-WebSockets @emph{server} interface for Racket, building on Racket's
+WebSockets server and client interfaces for Racket, building on Racket's
 @racket[web-server] collection.
 
 Besides support for RFC 6455, the final WebSockets standard, the
@@ -60,6 +60,14 @@ subprotocol selection:
 	       [(#f) (code:comment "if client did not request any subprotocol")
 		(lambda (c) (ws-send! c "You didn't explicitly request a subprotocol"))]]))]
 
+Creating a client connection:
+
+@racketblock[
+  (require net/rfc6455)
+  (require net/url)
+  (define c (ws-connect (string->url "ws://localhost:8081/")))
+  (ws-send! c "Hello world!")]
+
 @section{License}
 
 All the code in this package is licensed under the LGPL, version 3.0
@@ -80,6 +88,20 @@ concern for licensing minutiae.
 The interface is based on Racket's built-in
 @racketmodname[net/websocket] API, with some extensions and
 differences.
+
+@defproc[(ws-url? [x any/c]) boolean?]{
+
+Returns true if and only if @racket[x] is a @racket[url?] and has a
+@racket[url-scheme] equal to @racket["ws"] or @racket["wss"].
+
+}
+
+@defproc[(wss-url? [x any/c]) boolean?]{
+
+Returns true if and only if @racket[x] is a @racket[url?] and has a
+@racket[url-scheme] equal to @racket["wss"].
+
+}
 
 @defproc[(ws-conn? [x any/c]) boolean?]{
 
@@ -118,6 +140,19 @@ protocol for these values, while hybi-00 does not.
 
 Returns @racket[#t] if the given connection has been closed, and
 @racket[#f] otherwise.
+
+}
+
+@defproc[(ws-connect [u (or/c ws-url? wss-url?)]
+		     [#:headers headers (listof header?) '()]
+		     [#:protocol protocol (or/c 'rfc6455 'hybi00) 'rfc6455])
+	 ws-conn?]{
+
+Connect to the given WebSockets server, via TLS if @racket[(wss-url?
+u)]. Supplies @racket[headers] as additional headers in the WebSocket
+handshake request. A protocol variant other than the RFC 6455 standard
+can be chosen by supplying a value for the @racket[#:protocol]
+parameter.
 
 }
  

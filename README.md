@@ -1,9 +1,9 @@
 # RFC 6455 WebSockets for Racket
 
-This package, `rfc6455`, provides an
+This package, `rfc6455`, provides
 [RFC 6455](http://tools.ietf.org/html/rfc6455) compatible WebSockets
-*server* interface for Racket, building on Racket's `web-server`
-collection.
+server and client interfaces for Racket, building on Racket's
+`web-server` collection.
 
 Besides support for RFC 6455, the final WebSockets standard, the
 package also incorporates code supporting the earlier, draft
@@ -35,6 +35,9 @@ See the `net/rfc6455/examples` directory.
  - `client.html` and `client.js` form a simple browser-based
    WebSockets program that exercises the servers.
 
+ - `client.rkt` is a simple Racket-based WebSockets client program
+   that exercises the servers.
+
 To run the examples,
 
     $ racket -l net/rfc6455/examples/test-server
@@ -46,6 +49,10 @@ or
 and then open `client.html` in your favourite browser. It should work
 served directly off the file system. Make sure to open your browser's
 web console to see the effect of the WebSockets communication.
+
+The example Racket-based WebSockets client program can be run using
+
+    $ racket -l net/rfc6455/examples/client
 
 ## Usage Synopsis
 
@@ -68,6 +75,15 @@ subprotocol selection:
 			  (lambda (c) (ws-send! c "You requested a subprotocol"))]
 		     [(#f)          ;; if client did not request any subprotocol
 			  (lambda (c) (ws-send! c "You didn't explicitly request a subprotocol"))]]))
+```
+
+Creating a client connection:
+
+```racket
+(require net/rfc6455)
+(require net/url)
+(define c (ws-connect (string->url "ws://localhost:8081/")))
+(ws-send! c "Hello world!")
 ```
 
 ## Installation

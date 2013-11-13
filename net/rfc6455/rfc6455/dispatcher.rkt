@@ -1,5 +1,5 @@
 #lang racket/base
-;; RFC 6455 Handshaking & connection establishment.
+;; RFC 6455 Connection establishment.
 
 ;; Copyright (c) 2013 Tony Garnock-Jones
 ;;
@@ -13,24 +13,15 @@
 ;; more information.
 
 (require rackunit)
-(require file/sha1)
-(require net/base64)
 (require web-server/private/connection-manager)
 (require web-server/dispatchers/dispatch)
 (require web-server/http/request-structs)
 (require "conn.rkt")
+(require "handshake.rkt")
 (require "../http.rkt")
 (require "../timeout.rkt")
 
 (provide make-rfc6455-dispatcher)
-
-(define (key-digest key)
-  (base64-encode (sha1-bytes (open-input-bytes
-			      (bytes-append key #"258EAFA5-E914-47DA-95CA-C5AB0DC85B11")))
-		 #""))
-
-;; Example from rfc6455, section 4.2.2 
-(check-equal? (key-digest #"dGhlIHNhbXBsZSBub25jZQ==") #"s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
 
 (define (make-rfc6455-dispatcher conn-dispatch [conn-headers #f])
   (lambda (conn req)
@@ -55,13 +46,11 @@
 	  (values '() (void))))
 
     (define op (connection-o-port conn))
-    (define (output-header h) (fprintf op "~a: ~a\r\n" (header-field h) (header-value h)))
-
     (fprintf op "HTTP/1.1 101 Switching Protocols\r\n")
-    (output-header (header #"Upgrade" #"websocket"))
-    (output-header (header #"Connection" #"Upgrade"))
-    (output-header (header #"Sec-WebSocket-Accept" (key-digest websocket-key)))
-    (for ((h reply-headers)) (output-header h))
+    (output-header op (header #"Upgrade" #"websocket"))
+    (output-header op (header #"Connection" #"Upgrade"))
+    (output-header op (header #"Sec-WebSocket-Accept" (key-digest websocket-key)))
+    (for ((h reply-headers)) (output-header op h))
     (fprintf op "\r\n")
     (flush-output op)
 

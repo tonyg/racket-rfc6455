@@ -2,15 +2,20 @@
 
 (require racket/match)
 (require racket/string)
+(require (only-in racket/port call-with-output-bytes))
 (require web-server/http/request-structs)
 (require web-server/private/connection-manager)
 (require net/url)
-(require (only-in openssl ssl-port?))
+(require (only-in racket/tcp tcp-connect))
+(require (only-in openssl ssl-port? ssl-connect))
+(require "url.rkt")
 
 (provide tokenize-header-value
 	 reconstruct-request-line
 	 url->resource-string
-	 construct-ws-location)
+	 construct-ws-location
+	 output-header
+	 simple-outbound-request)
 
 (define (tokenize-header-value v [value-if-absent '()])
   (if v
@@ -49,3 +54,25 @@
 		      (string-append ":" (number->string port))
 		      "")
 		  resource)))
+
+(define (output-header op h)
+  (fprintf op "~a: ~a\r\n" (header-field h) (header-value h)))
+
+(define (simple-outbound-request u print-remainder-of-header)
+  (define ssl? (wss-url? u))
+  (define host (url-host u))
+  (define port (or (url-port u) (if ssl? 443 80)))
+  (define connect (if ssl? ssl-connect tcp-connect))
+  (define-values (ip op) (connect host port))
+  (write-bytes (call-with-output-bytes
+		(lambda (op)
+		  (fprintf op "GET ~a HTTP/1.1\r\n" (url->resource-string u))
+		  (fprintf op "Host: ~a~a\r\n"
+			   host
+			   (if (url-port u) (format ":~a" (url-port u)) ""))
+		  (fprintf op "Connection: Upgrade\r\n")
+		  (fprintf op "Upgrade: WebSocket\r\n")
+		  (print-remainder-of-header op)))
+	       op)
+  (flush-output op)
+  (values ip op))
