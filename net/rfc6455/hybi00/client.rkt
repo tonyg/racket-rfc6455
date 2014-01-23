@@ -14,12 +14,12 @@
 ;; modified software. See http://www.gnu.org/licenses/lgpl-3.0.txt for
 ;; more information.
 
-(require web-server/private/connection-manager)
 (require web-server/http/response)
 (require web-server/http/request)
 (require web-server/http/request-structs)
 (require "../http.rkt")
 (require "../timeout.rkt")
+(require "../private/connection-manager.rkt")
 (require "conn.rkt")
 (require "handshake.rkt")
 
@@ -46,5 +46,5 @@
 	   client-ans
 	   server-ans))
 
-  (define conn (new-connection (ws-idle-timeout) ip op (current-custodian) #f))
+  (define conn (new-web-server-connection ip op))
   (hybi00-conn #f sresponse rheaders ip op (lambda () (bump-connection-timeout! conn))))

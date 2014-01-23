@@ -13,13 +13,13 @@
 ;; more information.
 
 (require (only-in racket/string string-trim))
-(require web-server/private/connection-manager)
 (require web-server/http/response)
 (require web-server/http/request)
 (require web-server/http/request-structs)
 (require net/base64)
 (require "../http.rkt")
 (require "../timeout.rkt")
+(require "../private/connection-manager.rkt")
 (require "conn.rkt")
 (require "handshake.rkt")
 
@@ -59,7 +59,7 @@
 		  (bytes->string/latin-1 (key-digest key)))
     (error 'rfc6455-connect "Server supplied an incorrect Sec-WebSocket-Accept header"))
 
-  (define conn (new-connection (ws-idle-timeout) ip op (current-custodian) #f))
+  (define conn (new-web-server-connection ip op))
   (rfc6455-conn #f
 		response-line
 		response-headers
