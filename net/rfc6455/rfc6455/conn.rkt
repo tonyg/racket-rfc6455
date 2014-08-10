@@ -82,7 +82,7 @@
   (converter (apply bytes-append (reverse rev-acc))))
 
 (define (rfc6455-recv c #:stream? [stream? #f] #:payload-type [payload-type 'auto])
-  (flush-output (ws-conn-base-op c))
+  (with-handlers [(exn:fail:network? (lambda (e) 'ignore))] (flush-output (ws-conn-base-op c)))
   (if stream?
       (let-values (((ip op) (make-pipe)))
 	(thread (lambda ()
