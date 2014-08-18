@@ -68,20 +68,18 @@
   (get-output-bytes ob))
 
 (define (hybi00-send! wsc s)
-  (match-define (hybi00-conn _ _ _ _ op _) wsc)
-  (write-hybi00-frame! #xff s op))
+  (write-hybi00-frame! #xff s (ws-conn-base-op wsc)))
 
 (define (hybi00-recv wsc)
-  (match-define (hybi00-conn _ _ _ ip _ _) wsc)
-  (define-values (ft m) (read-hybi00-frame ip))
+  (define-values (ft m) (read-hybi00-frame (ws-conn-base-ip wsc)))
   ((ws-conn-base-bump-timeout! wsc))
   (if (= #x00 ft)
       eof
       m))
 
 (define (hybi00-close! wsc)
-  (match-define (hybi00-conn _ _ _ ip op _) wsc)
-  
+  (define op (ws-conn-base-op wsc))
+
   (case (hybi00-framing-mode)
     [(new)
      (write-hybi00-frame! #x00 "" op)]
@@ -90,7 +88,7 @@
      (write-byte #x00 op)])
   (flush-output op)
 
-  (close-input-port ip)
+  (close-input-port (ws-conn-base-ip wsc))
   (close-output-port op)
   (set-ws-conn-base-closed?! wsc #t))
 
