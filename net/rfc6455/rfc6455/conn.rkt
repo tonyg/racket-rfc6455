@@ -126,7 +126,9 @@
     (flush-output (ws-conn-base-op c))
     (let loop ()
       (unless (eof-object? (next-data-frame c))
-	(loop)))))
+	(loop)))
+    (close-input-port (ws-conn-base-ip c))
+    (close-output-port (ws-conn-base-op c))))
 
 (struct rfc6455-conn ws-conn-base (mask?)
 	#:transparent
