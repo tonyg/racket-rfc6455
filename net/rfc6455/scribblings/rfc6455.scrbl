@@ -4,7 +4,6 @@
 	  (for-label racket
 		     net/url
 		     web-server/http/request-structs
-		     (prefix-in builtin: net/websocket/server)
 		     net/rfc6455))
 
 @title{RFC 6455 WebSockets for Racket}
@@ -41,7 +40,7 @@ This package has been developed against
 
 @section{Synopsis}
 
-Using the @racketmodname[net/websocket]-compatible interface:
+Using the legacy @code{net/websocket}-compatible interface:
 
 @racketblock[
   (require net/rfc6455)
@@ -85,9 +84,8 @@ concern for licensing minutiae.
 
 @defmodule[net/rfc6455]
 
-The interface is based on Racket's built-in
-@racketmodname[net/websocket] API, with some extensions and
-differences.
+The interface is based on the @code{net/websocket} API from older
+versions of Racket, with some extensions and differences.
 
 @defproc[(ws-url? [x any/c]) boolean?]{
 
@@ -106,8 +104,7 @@ Returns true if and only if @racket[x] is a @racket[url?] and has a
 @defproc[(ws-conn? [x any/c]) boolean?]{
 
 Returns @racket[#t] if and only if @racket[x] is a WebSocket
-connection as defined by this package. Note that this is quite
-different from @racket[builtin:ws-conn?].
+connection as defined by this package.
 
 }
 
@@ -155,7 +152,7 @@ can be chosen by supplying a value for the @racket[#:protocol]
 parameter.
 
 }
- 
+
 @defproc[(ws-serve [conn-dispatch (-> ws-conn? request? void)]
 		   [#:conn-headers conn-headers
 				   (or/c (-> bytes? (listof header?) request?
@@ -166,7 +163,8 @@ parameter.
 	 (-> void)]{
 
 This is a convenience entry point, largely directly compatible with
-@racket[builtin:ws-serve], including all its arguments besides those
+@code{ws-serve} from the built-in websocket support in older versions
+of Racket, including all its arguments besides those
 shown. If @racket[#:conn-headers] is supplied, then it is inspected to
 see whether it takes two or three arguments, and is called
 appropriately.}
