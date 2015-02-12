@@ -10,7 +10,7 @@
 
 (define (do-connection protocol)
   (printf "Connecting using protocol ~a...\n" protocol)
-  (define c (ws-connect (string->url "ws://localhost:8081/") #:protocol protocol))
+  (define c (ws-connect (string->url "ws://localhost:8081/test?foo=bar") #:protocol protocol))
   (ws-send! c (format "Hello from Racket WS client, protocol variant ~a" protocol))
   (for ((i 5)) (recv/print c))
   (ws-send! c "goodbye")

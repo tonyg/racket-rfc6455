@@ -29,8 +29,10 @@
 		(string->bytes/latin-1 (url->string (request-uri req)))
 		#" HTTP/1.1"))
 
-(define (url->resource-string u)
-  (string-join (cons "" (map path/param-path (url-path u))) "/"))
+(define (url->resource-string u #:include-query? [include-query? #t])
+  (define u1 (struct-copy url u [scheme #f] [user #f] [host #f] [port #f] [fragment #f]))
+  (define u2 (if include-query? u1 (struct-copy url u1 [query '()])))
+  (url->string u2))
 
 ;; Follows the rules in section 3.2 of draft-ietf-hybi-thewebsocketprotocol-00.txt
 ;; for constructing a URL for use in a Sec-WebSocket-Location header.

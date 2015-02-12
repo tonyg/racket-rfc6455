@@ -28,7 +28,7 @@
   (syntax-rules ()
     [(_ [uri-regexp [(protocol ...) function] ...] ...)
      (lambda (uri)
-       (define resource (url->resource-string uri))
+       (define resource (url->resource-string uri #:include-query? #f))
        (cond
 	[(regexp-match-exact? uri-regexp resource)
 	 (lambda (requested-protocol)
