@@ -5,7 +5,6 @@
 	       "base"
 	       "net-lib"
 	       "rackunit-lib"
-	       "unstable-contract-lib"
 	       "web-server-lib"
 	       ))
 (define build-deps '(

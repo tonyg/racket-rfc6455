@@ -17,7 +17,6 @@
 (require racket/list
          racket/unit
          racket/contract
-         unstable/contract
 	 web-server/dispatchers/dispatch
          web-server/private/dispatch-server-unit
          web-server/private/dispatch-server-sig
