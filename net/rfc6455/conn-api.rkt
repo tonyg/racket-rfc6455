@@ -1,7 +1,5 @@
 #lang racket/base
 
-(require racket/generic)
-
 (provide (struct-out ws-conn-base)
 	 open-ws-conn?
 
@@ -15,7 +13,16 @@
 	 ws-conn-headers
 	 ws-send!
 	 ws-recv
-	 ws-close!)
+	 ws-close!
+
+         ws-conn-peer-addresses
+         ws-conn-host
+         ws-conn-path)
+
+(require racket/generic)
+(require racket/match)
+(require racket/string)
+(require web-server/http/request-structs)
 
 (struct ws-conn-base ([closed? #:mutable] line headers ip op bump-timeout!)
 	#:property prop:evt (struct-field-index ip)
@@ -42,3 +49,25 @@
   (ws-close! ws-conn
 	     #:status [status]
 	     #:reason [reason]))
+
+(define (ws-conn-peer-addresses c)
+  (local-require racket/tcp)
+  (local-require openssl)
+  (define ip (ws-conn-base-ip c))
+  (if (ssl-port? ip)
+      (ssl-addresses ip #t)
+      (tcp-addresses ip #t)))
+
+;; WSConn -> (Option Bytes)
+(define (ws-conn-host c)
+  (cond [(headers-assq* #"Host" (ws-conn-headers c)) => header-value]
+        [else #f]))
+
+(define (bytes-split bs)
+  (map string->bytes/latin-1
+       (string-split (bytes->string/latin-1 bs))))
+
+;; WSConn -> Bytes
+(define (ws-conn-path c)
+  (match-define (list* _method path _rest) (bytes-split (ws-conn-line c)))
+  path)
