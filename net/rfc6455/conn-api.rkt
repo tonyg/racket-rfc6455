@@ -16,7 +16,7 @@
 	 ws-close!
 
          ws-conn-peer-addresses
-         ws-conn-host
+         ws-conn-host+port
          ws-conn-path)
 
 (require racket/generic)
@@ -58,10 +58,17 @@
       (ssl-addresses ip #t)
       (tcp-addresses ip #t)))
 
-;; WSConn -> (Option Bytes)
-(define (ws-conn-host c)
-  (cond [(headers-assq* #"Host" (ws-conn-headers c)) => header-value]
-        [else #f]))
+;; WSConn -> (Values (Option Bytes) (Option Natural))
+(define (ws-conn-host+port c)
+  (cond [(headers-assq* #"Host" (ws-conn-headers c)) =>
+         (lambda (h)
+           (match (header-value h)
+             [(regexp #px"(.*):(\\d+)" (list _ host port))
+              (values host (string->number (bytes->string/latin-1 port)))]
+             [host
+              (values host #f)]))]
+        [else
+         (values #f #f)]))
 
 (define (bytes-split bs)
   (map string->bytes/latin-1
