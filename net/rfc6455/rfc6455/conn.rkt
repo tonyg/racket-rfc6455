@@ -118,15 +118,17 @@
 
 (define (rfc6455-close! c #:status [status 1000] #:reason [reason ""])
   (unless (ws-conn-base-closed? c)
-    (write-frame (rfc6455-frame #t 8 (bytes-append (integer->integer-bytes status 2 #f #t)
-					      (string->bytes/utf-8 reason)))
-		 (ws-conn-base-op c)
-		 (rfc6455-conn-mask? c))
     (set-ws-conn-base-closed?! c #t)
-    (flush-output (ws-conn-base-op c))
-    (let loop ()
-      (unless (eof-object? (next-data-frame c))
-	(loop)))
+    (with-handlers [(exn:fail? void)]
+      (write-frame (rfc6455-frame #t 8 (bytes-append (integer->integer-bytes status 2 #f #t)
+                                                     (string->bytes/utf-8 reason)))
+                   (ws-conn-base-op c)
+                   (rfc6455-conn-mask? c))
+      (flush-output (ws-conn-base-op c)))
+    (with-handlers [(exn:fail? void)]
+      (let loop ()
+        (unless (eof-object? (next-data-frame c))
+          (loop))))
     (close-input-port (ws-conn-base-ip c))
     (close-output-port (ws-conn-base-op c))))
 

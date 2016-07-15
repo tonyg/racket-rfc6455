@@ -78,19 +78,22 @@
       m))
 
 (define (hybi00-close! wsc)
-  (define op (ws-conn-base-op wsc))
+  (unless (ws-conn-base-closed? wsc)
+    (set-ws-conn-base-closed?! wsc #t)
 
-  (case (hybi00-framing-mode)
-    [(new)
-     (write-hybi00-frame! #x00 "" op)]
-    [(old)
-     (write-byte #xff op)
-     (write-byte #x00 op)])
-  (flush-output op)
+    (define op (ws-conn-base-op wsc))
 
-  (close-input-port (ws-conn-base-ip wsc))
-  (close-output-port op)
-  (set-ws-conn-base-closed?! wsc #t))
+    (with-handlers [(exn:fail? void)]
+      (case (hybi00-framing-mode)
+        [(new)
+         (write-hybi00-frame! #x00 "" op)]
+        [(old)
+         (write-byte #xff op)
+         (write-byte #x00 op)])
+      (flush-output op))
+
+    (close-input-port (ws-conn-base-ip wsc))
+    (close-output-port op)))
 
 (struct hybi00-conn ws-conn-base ()
 	#:transparent
@@ -124,5 +127,4 @@
 	 (define (ws-close! c
 			    #:status [status 1000]
 			    #:reason [reason ""])
-	   (unless (ws-conn-base-closed? c)
-	     (hybi00-close! c)))])
+           (hybi00-close! c))])
