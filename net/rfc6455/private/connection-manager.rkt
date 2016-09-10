@@ -20,5 +20,5 @@
 ;; InputPort OutputPort -> WebServerConnection
 (define (new-web-server-connection ip op)
   (if new-style-connection-manager?
-      (new-connection the-connection-manager (ws-idle-timeout) ip op (current-custodian) #f)
-      (new-connection (ws-idle-timeout) ip op (current-custodian) #f)))
+      (new-connection the-connection-manager (ws-idle-timeout) ip op (make-custodian) #f)
+      (new-connection (ws-idle-timeout) ip op (make-custodian) #f)))
