@@ -71,6 +71,7 @@
 	eof]
        [(9) ;; ping; reply
 	(write-frame (rfc6455-frame #t 10 payload) (ws-conn-base-op c) (rfc6455-conn-mask? c))
+        (flush-output (ws-conn-base-op c))
 	(next-data-frame c)]
        [(10) ;; unsolicited pong; ignore
 	(next-data-frame c)]
