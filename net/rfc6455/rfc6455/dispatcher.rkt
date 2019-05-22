@@ -20,6 +20,7 @@
 (require "handshake.rkt")
 (require "../http.rkt")
 (require "../timeout.rkt")
+(require (submod "../conn-api.rkt" implementation))
 
 (provide make-rfc6455-dispatcher)
 
@@ -55,11 +56,13 @@
     (flush-output op)
 
     (bump-connection-timeout! conn)
-    (conn-dispatch (rfc6455-conn #f
-				 request-line
-				 headers
-				 (connection-i-port conn)
-				 op
-				 (lambda () (bump-connection-timeout! conn))
-				 #f)
+    (conn-dispatch (ws-conn-start! (rfc6455-conn #f
+                                                 request-line
+                                                 headers
+                                                 (connection-i-port conn)
+                                                 op
+                                                 (lambda () (bump-connection-timeout! conn))
+                                                 (ws-read-thread)
+                                                 (void)
+                                                 #f))
 		   connection-state)))

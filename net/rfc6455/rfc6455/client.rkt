@@ -22,6 +22,7 @@
 (require "../private/connection-manager.rkt")
 (require "conn.rkt")
 (require "handshake.rkt")
+(require (submod "../conn-api.rkt" implementation))
 
 (provide rfc6455-connect)
 
@@ -60,10 +61,12 @@
     (error 'rfc6455-connect "Server supplied an incorrect Sec-WebSocket-Accept header"))
 
   (define conn (new-web-server-connection ip op))
-  (rfc6455-conn #f
-		response-line
-		response-headers
-		ip
-		op
-		(lambda () (bump-connection-timeout! conn))
-		#t))
+  (ws-conn-start! (rfc6455-conn #f
+                                response-line
+                                response-headers
+                                ip
+                                op
+                                (lambda () (bump-connection-timeout! conn))
+                                (ws-read-thread)
+                                (void)
+                                #t)))

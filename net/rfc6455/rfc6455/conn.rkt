@@ -79,43 +79,41 @@
 	(rfc6455-close! c #:status 1002 #:reason (format "Unexpected opcode ~a" opcode))
 	eof])]))
 
-(define (finish-non-stream-recv rev-acc converter)
-  (converter (apply bytes-append (reverse rev-acc))))
+(define (flush! c)
+  (with-handlers [(exn:fail? (lambda (e) 'ignore))]
+    (flush-output (ws-conn-base-op c))))
 
-(define (rfc6455-recv c #:stream? [stream? #f] #:payload-type [payload-type 'auto])
-  (with-handlers [(exn:fail? (lambda (e) 'ignore))] (flush-output (ws-conn-base-op c)))
-  (if stream?
-      (let-values (((ip op) (make-pipe)))
-	(thread (lambda ()
-		  (let loop ()
-		    (if (ws-conn-base-closed? c)
-			(close-output-port op)
-			(match (next-data-frame c)
-			  [(? eof-object?) (close-output-port op)]
-			  [(rfc6455-frame final? opcode payload)
-			   (write-bytes payload op)
-			   (if final?
-			       (close-output-port op)
-			       (loop))])))))
-	ip)
-      (let loop ((rev-acc '()) (converter (case payload-type
-					    [(text) bytes->string/utf-8]
-					    [(binary) values]
-					    [(auto) #f]
-					    [else (error 'rfc6455-recv
-							 "Unsupported payload type: ~v"
-							 payload-type)])))
-	(if (ws-conn-base-closed? c)
-	    eof
-	    (match (next-data-frame c)
-	      [(? eof-object?) eof]
-	      [(rfc6455-frame final? opcode payload)
-	       ((if final? finish-non-stream-recv loop)
-		(cons payload rev-acc)
-		(or converter (case opcode
-				[(1) bytes->string/utf-8]
-				[(2) values]
-				[else #f])))])))))
+(define (rfc6455-recv** c)
+  (flush! c)
+  (let loop ((rev-acc '()) (converter #f))
+    (if (ws-conn-base-closed? c)
+        eof
+        (match (next-data-frame c)
+          [(? eof-object?) eof]
+          [(rfc6455-frame final? opcode payload)
+           (let ((rev-acc (cons payload rev-acc))
+                 (converter (or converter (case opcode
+                                            [(1) bytes->string/utf-8]
+                                            [(2) values]
+                                            [else (lambda (_)
+                                                    (error 'rfc6455-recv**
+                                                           "Cannot deduce frame format"))]))))
+             (if final?
+                 (list (apply bytes-append (reverse rev-acc)) converter)
+                 (loop rev-acc converter)))]))))
+
+(define (rfc6455-stream** c op)
+  (flush! c)
+  (let loop ()
+    (if (ws-conn-base-closed? c)
+        (close-output-port op)
+        (match (next-data-frame c)
+          [(? eof-object?) (close-output-port op)]
+          [(rfc6455-frame final? opcode payload)
+           (write-bytes payload op)
+           (if final?
+               (close-output-port op)
+               (loop))]))))
 
 (define (rfc6455-close! c #:status [status 1000] #:reason [reason ""])
   (unless (ws-conn-base-closed? c)
@@ -151,12 +149,10 @@
 			  #:final-fragment? final-fragment?
 			  #:payload-type payload-type
 			  #:flush? flush?))
-	 (define (ws-recv c
-			  #:stream? [stream? #f]
-			  #:payload-type [payload-type 'text])
-	   (rfc6455-recv c
-			 #:stream? stream?
-			 #:payload-type payload-type))
+	 (define (ws-recv** c)
+	   (rfc6455-recv** c))
+         (define (ws-stream** c output-port)
+           (rfc6455-stream** c output-port))
 	 (define (ws-close! c
 			    #:status [status 1000]
 			    #:reason [reason ""])

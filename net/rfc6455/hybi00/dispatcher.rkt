@@ -31,6 +31,7 @@
          "handshake.rkt")
 (require "../http.rkt")
 (require "../timeout.rkt")
+(require (submod "../conn-api.rkt" implementation))
 
 (provide make-hybi00-dispatcher)
 
@@ -51,7 +52,7 @@
       (next-dispatcher))
     (define key2 (header-value key2h))
     (define key3 (read-bytes 8 ip))
-    
+
     (define-values (reply-headers state)
       (if conn-headers
 	  (if (procedure-arity-includes? conn-headers 3)
@@ -63,7 +64,7 @@
     (define origin (get-header #"Origin"))
 
     (fprintf op "HTTP/1.1 101 WebSocket Protocol Handshake\r\n")
-    (print-headers 
+    (print-headers
      op
      `(,(make-header #"Upgrade" #"WebSocket")
        ,(make-header #"Connection" #"Upgrade")
@@ -72,19 +73,21 @@
 	     (list (make-header #"Sec-WebSocket-Origin" origin))
 	     '())
        ,@reply-headers))
-    
+
     (write-bytes
      (handshake-solution (bytes->string/utf-8 key1)
                          (bytes->string/utf-8 key2)
                          key3)
      op)
     (flush-output op)
-    
+
     (bump-connection-timeout! c)
-    (conn-dispatch (hybi00-conn #f
-				cline
-				headers
-				ip
-				op
-				(lambda () (bump-connection-timeout! c)))
+    (conn-dispatch (ws-conn-start! (hybi00-conn #f
+                                                cline
+                                                headers
+                                                ip
+                                                op
+                                                (lambda () (bump-connection-timeout! c))
+                                                (ws-read-thread)
+                                                (void)))
 		   state)))

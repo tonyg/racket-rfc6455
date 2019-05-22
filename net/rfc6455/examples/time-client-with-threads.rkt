@@ -6,9 +6,6 @@
   (require "../../rfc6455.rkt")
   (require net/url)
 
-  (define (recv/print c)
-    (printf "Got message: ~a\n" (ws-recv c)))
-
   (void
    (thread
     (lambda ()
@@ -17,8 +14,11 @@
       (printf "Connected.\n")
       (ws-send! c "Hello from time-client-with-threads.rkt")
       (let loop ()
-        (recv/print c)
-        (loop)))))
+        (define m (ws-recv c))
+        (printf "Got message: ~a\n" m)
+        (unless (eof-object? m)
+          (loop)))
+      (printf "Server disconnected. (You probably still need to press ENTER to quit.)\n"))))
 
   (printf "Connecting in a background thread. Press ENTER to quit.\n")
   (let loop ()

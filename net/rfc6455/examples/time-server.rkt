@@ -16,9 +16,8 @@
                         (lambda _
                           (ws-send! c (number->string deadline))
                           (loop (+ deadline 1000))))
-            (handle-evt c
-                        (lambda _
-                          (define m (ws-recv c #:payload-type 'text))
+            (handle-evt (ws-recv-evt c #:payload-type 'text)
+                        (lambda (m)
                           (unless (eof-object? m)
                             (printf "Ignoring message ~v received from ~v\n" m id)
                             (loop deadline))))))

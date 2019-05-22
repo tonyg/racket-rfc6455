@@ -6,10 +6,10 @@
 		     web-server/http/request-structs
 		     net/rfc6455))
 
-@title{RFC 6455 WebSockets for Racket}
+@title[#:version "2.0.0"]{RFC 6455 WebSockets for Racket}
 @author[(author+email "Tony Garnock-Jones" "tonygarnockjones@gmail.com")]
 
-@local-table-of-contents[]
+@;@local-table-of-contents[]
 
 @section{Introduction}
 
@@ -25,10 +25,13 @@ proposal, because several common older browsers still use this
 protocol variant.
 
 Wikipedia has a
-@link["http://en.wikipedia.org/wiki/WebSocket#Browser_support"]{good
-section on browser support for WebSocket protocol variations}, which
-states "All the latest browsers except Android browser support the
-latest specification (RFC 6455) of the WebSocket protocol."
+@link["http://en.wikipedia.org/wiki/WebSocket#Browser_implementation"]{section
+on browser support for WebSocket protocol variations}. In 2013, at the
+time this manual was written, it stated that "all the latest browsers
+except Android browser support the latest specification (RFC 6455) of
+the WebSocket protocol." For up-to-date, detailed information on
+browser support for WebSockets, see
+@hyperlink["https://caniuse.com/#search=WebSockets"]{caniuse.com}.
 
 This package has been developed against
 
@@ -36,7 +39,37 @@ This package has been developed against
   @item{Firefox 24.0 (which is an RFC 6455 peer)}
   @item{Chrome 30.0.1599.101 (which is an RFC 6455 peer)}
   @item{Safari 5.1.10 (which is a hybi-00 peer)}
-]
+  ]
+
+@(define (tech:event)
+   (tech #:doc '(lib "scribblings/reference/reference.scrbl") "synchronizable event"))
+@(define (tech:result)
+   (tech #:doc '(lib "scribblings/reference/reference.scrbl") "synchronization result"))
+
+@section{Changes}
+
+Version 2.0.0 of this library introduces a new interface to streaming
+message reception, @racket[ws-recv-stream], and makes a breaking
+change to the way @racket[ws-conn?] values work as @(tech:event)s. The
+@(tech:result) of such an event is now a received message, where
+previously it was an uninteresting value. See the (new) procedure
+@racket[ws-recv-evt].
+
+In addition, prior to version 2.0.0, the default
+@racket[#:payload-type] for @racket[ws-recv] was actually
+@racket['text], even though the documentation claimed that it was
+@racket['auto]. From version 2.0.0, the default is @racket['auto] in
+both the documentation and the implementation.
+
+Version 1.0.1 of this library is the last version with the old
+@racket[#:stream?] interface to streaming receives. It also has an
+interface bug: when (1) using a @racket[ws-conn?] as an
+@(tech:event), (2) with an event-handler that calls
+@racket[ws-recv], (3) connected to a client that occasionally sends
+websocket "ping" frames, the call to @racket[ws-recv] may get stuck
+waiting for the next non-"ping" frame, leading to a kind of temporary
+stall on the thread invoking @racket[sync]. This bug was the chief
+motivation for the changes of version 2.0.0.
 
 @section{Synopsis}
 
@@ -260,35 +293,66 @@ multi-fragment message:
 }
 
 @defproc[(ws-recv [c ws-conn?]
-		  [#:stream? stream? boolean? #f]
 		  [#:payload-type payload-type (or/c 'auto 'text 'binary) 'auto])
-	 (or/c eof-object? string? bytes? input-port?)]{
+	 (or/c eof-object? string? bytes?)]{
 
 Receives a message from the remote peer.
 
-(Note: Only RFC 6455 peers support streaming and non-text payloads.
-Attempts to use these features with hybi-00 peers will signal an
-error. See @racket[ws-conn-supports-fragmentation?] and
-@racket[ws-conn-supports-payload-type?].)
+(Note: Only RFC 6455 peers support binary payloads. Attempts to use
+@racket['binary] payload-type with hybi-00 peers will signal an error.
+See @racket[ws-conn-supports-payload-type?].)
 
-If @racket[stream?] is true, returns an input port from which the
-bytes or characters making up the message can be read. An end-of-file
-from the resulting input port is ambiguous: it does not separate the
-end of the message being read from the end of the connection itself.
-Use @racket[ws-conn-closed?] to disambiguate.
+Returns either a string or a bytes, depending on
+@racket[payload-type]. If a specific @racket['text] or
+@racket['binary] payload type is requested, the corresponding result
+type is returned, or if @racket['auto] is requested, the message's own
+text/binary indicator bit is used to decide which to return. If
+@racket[eof] occurs mid-message, fragments so far received are
+discarded and @racket[eof] is returned.
 
-If @racket[stream?] is @racket[#f], returns either a string or a
-bytes, depending on @racket[payload-type]. If a specific
-@racket['text] or @racket['binary] payload type is requested, the
-corresponding result type is returned, or if @racket['auto] (the
-default) is requested, the message's own text/binary indicator bit is
-used to decide which to return. If @racket[eof] occurs mid-message,
-fragments so far received are discarded and @racket[eof] is returned.
+Multi-fragment messages are transparently reassembled into a single
+string or bytes.
 
-Multi-fragment messages are transparently reassembled: in the case of
-a returned input-port, fragment boundaries are not preserved, and in
-the case of a returned string or bytes, the entire reassembled message
-is returned.
+}
+
+@defproc[(ws-recv-evt [c ws-conn?]
+		      [#:payload-type payload-type (or/c 'auto 'text 'binary) 'auto])
+	 evt?]{
+
+Produces a @(tech:event) that effectively gives an asynchronous
+version of @racket[ws-recv]. The @(tech:result) of the event is the
+received message (either a string or a bytes, just the same as the way
+@racket[ws-recv] works) or @racket[eof].
+
+The same caveats regarding @racket[payload-type] apply here as for
+@racket[ws-recv].
+
+A @racket[ws-conn?] value may be used as if it were an event produced
+by @racket[ws-recv-evt]: using @racket[c] alone as an event is
+equivalent to using @racket[(ws-recv-evt c)].
+
+}
+
+@defproc[(ws-recv-stream [c ws-conn?]) input-port?]{
+
+Receives a message from the remote peer, making the contents of the
+message available through an input port.
+
+(Note: Only RFC 6455 peers support streaming. Attempts to use this
+procedure with hybi-00 peers will signal an error. See
+@racket[ws-conn-supports-fragmentation?].)
+
+Returns an input port from which the bytes or characters making up the
+message can be read. An end-of-file from the resulting input port is
+ambiguous: it does not separate the end of the message being read from
+the end of the connection itself. Use @racket[ws-conn-closed?] to
+disambiguate, though beware of
+@hyperlink["https://en.wikipedia.org/wiki/Time_of_check_to_time_of_use"]{time-of-check-to-time-of-use}
+issues.
+
+Multi-fragment messages are transparently reassembled. Fragment
+boundaries are not preserved when reading from the returned input
+port.
 
 }
 

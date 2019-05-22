@@ -12,9 +12,8 @@
                         (lambda _
                           (ws-send! c "Waited another second")
                           (loop)))
-            (handle-evt c
-                        (lambda _
-                          (define m (ws-recv c #:payload-type 'text))
+            (handle-evt (ws-recv-evt c #:payload-type 'text)
+                        (lambda (m)
                           (unless (eof-object? m)
                             (if (equal? m "goodbye")
                                 (ws-send! c "Goodbye!")

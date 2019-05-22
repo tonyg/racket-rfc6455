@@ -20,6 +20,7 @@
 (require "../http.rkt")
 (require "../timeout.rkt")
 (require "../private/connection-manager.rkt")
+(require (submod "../conn-api.rkt" implementation))
 (require "conn.rkt")
 (require "handshake.rkt")
 
@@ -47,4 +48,11 @@
 	   server-ans))
 
   (define conn (new-web-server-connection ip op))
-  (hybi00-conn #f sresponse rheaders ip op (lambda () (bump-connection-timeout! conn))))
+  (ws-conn-start! (hybi00-conn #f
+                               sresponse
+                               rheaders
+                               ip
+                               op
+                               (lambda () (bump-connection-timeout! conn))
+                               (ws-read-thread)
+                               (void))))

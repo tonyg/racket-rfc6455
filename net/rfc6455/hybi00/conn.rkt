@@ -47,7 +47,7 @@
        (define len (integer-bytes->integer len-bs #f #t))
        (define data-bs (read-bytes len ip))
        (when (eof-object? data-bs) (error 'read-hybi00-frame "Premature connection close"))
-       (values frame (bytes->string/utf-8 data-bs)))]
+       (values frame data-bs))]
     [(old)
      (let ()
        (define l (read-byte ip))
@@ -56,7 +56,7 @@
               (read-byte ip)
               (values #x00 #"")]
              [else
-              (values #xff (bytes->string/utf-8 (read-until-byte #xff ip)))]))]))
+              (values #xff (read-until-byte #xff ip))]))]))
 
 (define (read-until-byte b ip)
   (define ob (open-output-bytes))
@@ -75,7 +75,7 @@
   ((ws-conn-base-bump-timeout! wsc))
   (if (= #x00 ft)
       eof
-      m))
+      (list m bytes->string/utf-8)))
 
 (define (hybi00-close! wsc)
   (unless (ws-conn-base-closed? wsc)
@@ -116,14 +116,10 @@
 	   (hybi00-send! c payload)
 	   (when flush?
 	     (flush-output (ws-conn-base-op c))))
-	 (define (ws-recv c
-			  #:stream? [stream? #f]
-			  #:payload-type [payload-type 'text])
-	   (when stream?
-	     (error 'ws-recv "hybi-00 transport cannot stream received messages"))
-	   (when (not (memq payload-type '(auto text)))
-	     (error 'ws-recv "hybi-00 transport cannot receive non-text messages"))
+	 (define (ws-recv** c)
 	   (hybi00-recv c))
+         (define (ws-stream** c output-port)
+           (error 'ws-recv "hybi-00 transport cannot stream received messages"))
 	 (define (ws-close! c
 			    #:status [status 1000]
 			    #:reason [reason ""])
