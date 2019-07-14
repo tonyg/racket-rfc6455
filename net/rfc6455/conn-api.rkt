@@ -9,6 +9,8 @@
 	 ws-conn-supports-payload-type?
 	 ws-conn-signals-status-on-close?
 	 ws-conn-closed?
+         ws-conn-close-status
+         ws-conn-close-reason
 	 ws-conn-line
 	 ws-conn-headers
 	 ws-send!
@@ -33,6 +35,8 @@
 (require web-server/http/request-structs)
 
 (struct ws-conn-base ([closed? #:mutable]
+                      [close-status #:mutable]
+                      [close-reason #:mutable]
                       line
                       headers
                       ip
@@ -52,6 +56,8 @@
   (ws-conn-supports-payload-type? ws-conn payload-type)
   (ws-conn-signals-status-on-close? ws-conn)
   (ws-conn-closed? ws-conn)
+  (ws-conn-close-status ws-conn)
+  (ws-conn-close-reason ws-conn)
   (ws-conn-line ws-conn)
   (ws-conn-headers ws-conn)
   (ws-send! ws-conn payload

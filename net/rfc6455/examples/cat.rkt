@@ -9,10 +9,15 @@
   (require (only-in racket/port read-line-evt))
 
   (define server "ws://localhost:8081/")
+  (define close-status 1000)
+  (define close-reason "")
   (command-line #:once-each
-                ["--server" s
-                 "URL of Websocket server to contact"
-                 (set! server s)])
+                ["--server" URL "URL of Websocket server to contact"
+                 (set! server URL)]
+                ["--status" CODE "Status code to use during WebSocket close"
+                 (set! close-status (string->number CODE))]
+                ["--reason" MESSAGE "Explanatory text to use during close"
+                 (set! close-reason MESSAGE)])
 
   (define c (ws-connect (string->url server)))
   (let loop ()
@@ -28,4 +33,6 @@
                             (void)
                             (begin (printf "~a\n" line)
                                    (loop)))))))
-  (ws-close! c))
+  (ws-close! c
+             #:status close-status
+             #:reason close-reason))

@@ -67,6 +67,11 @@
        [(8) ;; close; shutdown
 	(unless (ws-conn-base-closed? c)
 	  (write-frame (rfc6455-frame #t 8 #"") (ws-conn-base-op c) (rfc6455-conn-mask? c))
+          (when (>= (bytes-length payload) 2)
+            (define status (integer-bytes->integer payload #f #t 0 2))
+            (define reason (bytes->string/utf-8 (subbytes payload 2)))
+            (set-ws-conn-base-close-status! c status)
+            (set-ws-conn-base-close-reason! c reason))
 	  (set-ws-conn-base-closed?! c #t))
 	eof]
        [(9) ;; ping; reply
@@ -139,6 +144,8 @@
 	   (memq payload-type '(text binary)))
 	 (define (ws-conn-signals-status-on-close? c) #t)
 	 (define (ws-conn-closed? c) (ws-conn-base-closed? c))
+         (define (ws-conn-close-status c) (ws-conn-base-close-status c))
+         (define (ws-conn-close-reason c) (ws-conn-base-close-reason c))
 	 (define (ws-conn-line c) (ws-conn-base-line c))
 	 (define (ws-conn-headers c) (ws-conn-base-headers c))
 	 (define (ws-send! c payload

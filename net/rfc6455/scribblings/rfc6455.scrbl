@@ -6,7 +6,7 @@
 		     web-server/http/request-structs
 		     net/rfc6455))
 
-@title[#:version "2.0.0"]{RFC 6455 WebSockets for Racket}
+@title[#:version "2.1.0"]{RFC 6455 WebSockets for Racket}
 @author[(author+email "Tony Garnock-Jones" "tonygarnockjones@gmail.com")]
 
 @;@local-table-of-contents[]
@@ -47,6 +47,10 @@ This package has been developed against
    (tech #:doc '(lib "scribblings/reference/reference.scrbl") "synchronization result"))
 
 @section{Changes}
+
+Version 2.1.0 of this library introduces @racket[ws-conn-close-status]
+and @racket[ws-conn-close-reason] for retrieving information from
+close frames sent by remote peers.
 
 Version 2.0.0 of this library introduces a new interface to streaming
 message reception, @racket[ws-recv-stream], and makes a breaking
@@ -170,6 +174,19 @@ protocol for these values, while hybi-00 does not.
 
 Returns @racket[#t] if the given connection has been closed, and
 @racket[#f] otherwise.
+
+}
+
+@deftogether[(@defproc[(ws-conn-close-status [c ws-conn?]) (or/c #f number?)]
+              @defproc[(ws-conn-close-reason [c ws-conn?]) (or/c #f string?)])]{
+
+When @racket[ws-conn-closed?] returns @racket[#t], these procedures
+will respectively retrieve the "status code" and "reason" text from
+the close frame sent by the remote peer that caused the connection
+shutdown. If no such information is available, they will return
+@racket[#f]. Only RFC 6455 peers send information in their close
+frames; hybi-00 connections will always yield @racket[#f] from these
+procedures.
 
 }
 

@@ -102,6 +102,8 @@
 	 (define (ws-conn-supports-payload-type? c payload-type) (eq? payload-type 'text))
 	 (define (ws-conn-signals-status-on-close? c) #f)
 	 (define (ws-conn-closed? c) (ws-conn-base-closed? c))
+         (define (ws-conn-close-status c) (ws-conn-base-close-status c))
+         (define (ws-conn-close-reason c) (ws-conn-base-close-reason c))
 	 (define (ws-conn-line c) (ws-conn-base-line c))
 	 (define (ws-conn-headers c) (ws-conn-base-headers c))
 	 (define (ws-send! c payload
