@@ -133,10 +133,9 @@
       (let loop ()
         (unless (eof-object? (next-data-frame c))
           (loop))))
-    (close-input-port (ws-conn-base-ip c))
-    (close-output-port (ws-conn-base-op c))))
+    (rfc6455-conn-kill c)))
 
-(struct rfc6455-conn ws-conn-base (mask?)
+(struct rfc6455-conn ws-conn-base (mask? kill)
 	#:transparent
 	#:methods gen:ws-conn
 	[(define (ws-conn-supports-fragmentation? c) #t)

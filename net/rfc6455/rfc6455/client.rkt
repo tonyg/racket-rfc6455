@@ -16,6 +16,7 @@
 (require web-server/http/response)
 (require web-server/http/request)
 (require web-server/http/request-structs)
+(require web-server/private/connection-manager)
 (require net/base64)
 (require "../http.rkt")
 (require "../timeout.rkt")
@@ -71,4 +72,5 @@
                                 (lambda () (bump-connection-timeout! conn))
                                 (ws-read-thread)
                                 (void)
-                                #t)))
+                                #t
+                                (lambda () (kill-connection! conn)))))
