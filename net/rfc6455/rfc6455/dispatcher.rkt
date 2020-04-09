@@ -66,5 +66,6 @@
                                                  (lambda () (bump-connection-timeout! conn))
                                                  (ws-read-thread)
                                                  (void)
-                                                 #f))
+                                                 #f
+                                                 (lambda () (kill-connection! conn))))
 		   connection-state)))
