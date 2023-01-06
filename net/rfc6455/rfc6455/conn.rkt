@@ -72,7 +72,9 @@
             (define reason (bytes->string/utf-8 (subbytes payload 2)))
             (set-ws-conn-base-close-status! c status)
             (set-ws-conn-base-close-reason! c reason))
-	  (set-ws-conn-base-closed?! c #t))
+	  (set-ws-conn-base-closed?! c #t)
+	  (close-input-port (ws-conn-base-ip c))
+	  (close-output-port (ws-conn-base-op c)))
 	eof]
        [(9) ;; ping; reply
 	(write-frame (rfc6455-frame #t 10 payload) (ws-conn-base-op c) (rfc6455-conn-mask? c))
